@@ -21,7 +21,7 @@ minio_hosts:
       ansible_host: 20.1.1.103
 ```
 ## 自定义Playbook
-请参考`roles/ansible-minio/defaults/main.yml`中的默认变量将自定义部分添加在自定义playbook，或者主机清单中
+请参考`/root/.ansible/roles/ansible-minio/defaults/main.yml`中的默认变量将自定义部分添加在自定义playbook，或者主机清单中
 ```
 ---
 - name: Install minio service
@@ -29,7 +29,7 @@ minio_hosts:
   gather_facts: false
   vars:
     cluster_mode: true
-    minio_basedir: /ngcs/minio
+    minio_basedir: /data/minio
     minio_admin_user: admin
     minio_admin_pass: admin123
     # 新增用户设置
@@ -61,7 +61,7 @@ minio_hosts:
           - local: bucket02
             remote: bucket04
   roles:
-    - ansible-minio
+    - wezhai.minio
 ```
 ## 执行ansible命令
 ### 1. 安装Minio

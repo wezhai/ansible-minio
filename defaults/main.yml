@@ -8,7 +8,7 @@ minio_admin_user: minioadmin
 minio_admin_pass: minioadmin
 minio_service_port: 9000
 minio_console_port: 9001
-minio_basedir: /ngcs/minio
+minio_basedir: /data/minio
 minio_install_dir: "{{ minio_basedir }}/bin"
 minio_config_dir: "{{ minio_basedir }}/cfg"
 minio_data_dir: "{{ minio_basedir }}/data"
@@ -22,8 +22,8 @@ policies: &policies
 
 # 创建用户
 users:
-  - username: ngcsuser
-    password: ngcsuser
+  - username: miniouser
+    password: miniouser
     policies: *policies
 
 # Bucket 列表
