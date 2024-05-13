@@ -1,0 +1,50 @@
+---
+- name: Create group if not exists
+  group:
+    name: '{{ minio_sys_group }}'
+    state: present
+
+- name: Create user if not exists
+  user:
+    name: '{{ minio_sys_user }}'
+    group: '{{ minio_sys_group }}'
+    home: "/home/minio"
+    create_home: yes
+    state: present
+
+- name: Create dirs.
+  file:
+    path: "{{ dir }}"
+    owner: "{{ minio_sys_user }}"
+    group: "{{ minio_sys_group }}"
+    state: directory
+    mode: 0755
+  loop:
+    - "{{ minio_install_dir }}"
+    - "{{ minio_config_dir }}"
+    - "{{ minio_data_dir }}"
+    - "{{ minio_log_dir }}"
+    - "{{ minio_backup_dir }}"
+  loop_control:
+    loop_var: dir
+
+- name: Unpack {{ package_name }}
+  unarchive:
+    src: "{{ package_name }}"
+    dest: "{{ minio_install_dir }}"
+    owner: "{{ minio_sys_user }}"
+    group: "{{ minio_sys_group }}"
+    mode: 0755
+  become: true
+
+- name: Add environment file
+  template:
+    src: "minio_env.j2"
+    dest: "/etc/default/minio"
+  notify: Restart minio service
+
+- name: Add systemd file
+  template:
+    src: "minio.service.j2"
+    dest: "/etc/systemd/system/minio.service"
+  notify: Restart minio service

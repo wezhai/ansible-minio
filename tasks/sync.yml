@@ -1,0 +1,24 @@
+# 创建Bucket同步服务
+- name: Add synchronize config.
+  shell: |
+    {{ minio_install_dir }}/mc config host add minio{{ sync.from.area_label }} http://{{ hostvars[inventory_hostname].ansible_host}}:{{ minio_service_port }} {{ minio_admin_user }} {{ minio_admin_pass }}
+    {{ minio_install_dir }}/mc config host add minio{{ sync.to.area_label }} http://{{ sync.to.host }}:{{ sync.to.port }} {{ sync.to.access_key }} {{ sync.to.secret_key }}
+  become: yes
+  become_user: "{{ minio_sys_user }}"
+  
+- name: Render systemd files.
+  template:
+    src: sync.service.j2
+    dest: /etc/systemd/system/minio_{{ sync.from.area_label }}_{{ bucket_item.local }}_to_{{ sync.to.area_label }}_{{ bucket_item.remote }}.service
+  loop: "{{ sync.bucket_mapping }}"
+  loop_control:
+    loop_var: bucket_item
+
+- name: Start synchronize services.
+  systemd:
+    name: "minio_{{ sync.from.area_label }}_{{ bucket_item.local }}_to_{{ sync.to.area_label }}_{{ bucket_item.remote }}.service"
+    state: started
+    daemon_reload: yes
+  loop: "{{ sync.bucket_mapping }}"
+  loop_control:
+    loop_var: bucket_item

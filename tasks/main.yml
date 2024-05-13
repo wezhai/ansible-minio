@@ -1,0 +1,79 @@
+---
+# tasks file for ansible-minio
+- name: Install Minio
+  import_tasks: install.yml
+  tags:
+    - install
+
+- name: Uninstall Minio
+  import_tasks: uninstall.yml
+  tags:
+    - uninstall
+    - never
+
+- name: Start minio service
+  systemd:
+    name: minio
+    state: started
+    daemon_reload: true
+  notify: Waiting for minio console port {{ minio_console_port }}
+  tags:
+    - start
+    - install
+
+- name: Stop minio service
+  systemd:
+    name: minio
+    state: stopped
+  tags:
+    - stop
+    - never
+
+- name: Restart minio service
+  systemd:
+    name: minio
+    daemon_reload: true
+    state: restarted
+  notify: Waiting for minio console port {{ minio_console_port }}
+  tags:
+    - restart
+    - never
+
+- name: Create buckets.
+  import_tasks: bucket.yml
+  when: bucket_list is defined and bucket_list | length > 0
+  tags: 
+   - create_buckets
+   - never
+
+# 创建用户
+- name: Create users.
+  include_tasks:
+    file: user.yml
+    apply:
+      tags: create_users
+  loop: "{{ users }}"
+  loop_control:
+    loop_var: user
+  when: users is defined and users | length > 0
+  tags:
+    - create_users
+    - never
+
+########## 创建Bucket同步服务进程 ##########
+# 无论是否为集群模式，同步服务仅在第一个节点运行
+# 客户端新增本地主机配置信息
+# 客户端新增远程主机配置信息
+- name: Create bucket synchronize services.
+  include_tasks: 
+    file: sync.yml
+    apply:
+      tags: create_sync_services
+  loop: "{{ sync_service }}"
+  loop_control:
+    loop_var: sync
+  run_once: yes
+  when: sync_service is defined and sync_service | length > 0 and sync.bucket_mapping is defined
+  tags: 
+   - create_sync_services
+   - never

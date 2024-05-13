@@ -1,0 +1,51 @@
+---
+# defaults file for ansible-minio
+# 注意: 集群模式数据目录不能基于根目录'/'创建
+cluster_mode: true
+minio_sys_user: minio
+minio_sys_group: minio
+minio_admin_user: minioadmin
+minio_admin_pass: minioadmin
+minio_service_port: 9000
+minio_console_port: 9001
+minio_basedir: /ngcs/minio
+minio_install_dir: "{{ minio_basedir }}/bin"
+minio_config_dir: "{{ minio_basedir }}/cfg"
+minio_data_dir: "{{ minio_basedir }}/data"
+minio_log_dir: "{{ minio_basedir }}/log"
+minio_backup_dir: "/opt/minio"
+package_name: minio.tar.gz
+
+policies: &policies
+  - name: getput
+    file: getput_policy.json
+
+# 创建用户
+users:
+  - username: ngcsuser
+    password: ngcsuser
+    policies: *policies
+
+# Bucket 列表
+bucket_list:
+  - name: bucket01
+    expire_days: 365 # 设置文件生命周期
+  - name: bucket02
+  - name: bucket03
+  - name: bucket04
+# Bucket同步服务
+sync_service:
+  - upload_limit: 10MiB # 同步速率限制
+    from:
+      area_label: sh # 本地minio站点地域标识
+    to:
+      area_label: wx # 远程minio站点地域标识
+      host: 127.0.0.1 # 远程minio服务IP地址
+      port: 9000 # 远程minio服务端口号
+      access_key: minioadmin # 远程minio认证访问key（可使用为minio服务创建的默认管理员用户）
+      secret_key: minioadmin # 远程minio密钥（可使用为minio服务创建的默认管理员密码）
+    bucket_mapping: # 同步的Bucket列表，local为本地的Bucket name，remote为远程的Bucket name
+      - local: bucket01
+        remote: bucket03
+      - local: bucket02
+        remote: bucket04

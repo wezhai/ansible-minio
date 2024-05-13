@@ -1,0 +1,36 @@
+---
+- name: Stop minio service
+  shell: |
+    systemctl stop minio | true
+    ps -ef | grep '{{ minio_install_dir }}/minio' | grep -v grep | awk '{print $2}' | xargs -i kill -9 {} | true
+    kill -9 $(ps -ef | grep '{{ minio_install_dir }}/minio' | grep -v grep | awk '{print $2}') | true
+
+- name: Create backup dir
+  file:
+    path: "{{ minio_backup_dir }}"
+    mode: 0755
+    state: directory
+
+- name: Backup data dir
+  shell: |
+    postfix=$(date "+%Y%m%d")
+    if [ ! -d "{{ minio_backup_dir }}/backup_$postfix" ] && [ -d "{{ minio_data_dir }}" ]; then
+      \cp -pr {{ minio_data_dir }} {{ minio_backup_dir }}/backup_$postfix
+      \ln -s {{ minio_backup_dir }}/backup_$postfix {{ minio_backup_dir }}/latest
+    fi
+
+- name: Remove minio service.
+  shell: |
+    userdel minio | true
+    groupdel minio | true
+    \rm -rf /etc/systemd/system/minio.service {{ minio_config_dir }} {{ minio_log_dir }} {{ minio_install_dir }} {{ minio_data_dir }} /home/minio /etc/default/minio
+
+- name: Stop all minio sync service.
+  shell: |
+    systemctl list-units | grep minio_ | awk '{print $1}' | xargs -i systemctl stop {} | true
+    ps -ef | grep '{{ minio_install_dir }}/mc' | grep -v grep | awk '{print $2}' | xargs -i kill -9 {} | true
+    kill -9 $(ps -ef | grep '{{ minio_install_dir }}/mc' | grep -v grep | awk '{print $2}') | true
+
+- name: Remove sync service files.
+  shell: \rm -f /etc/systemd/system/minio_*.service
+  run_once: yes

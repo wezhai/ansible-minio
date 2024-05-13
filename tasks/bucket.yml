@@ -1,0 +1,51 @@
+---
+########## 创建Bucket ##########
+- name: Create ansible remote_tmp dir
+  file:
+    path: "/home/minio/.ansible/tmp"
+    state: directory
+    owner: "{{ minio_sys_user }}"
+    group: "{{ minio_sys_group }}"
+    mode: 0700
+
+- name: Add minio config only first host.
+  shell: |
+    {{ minio_install_dir }}/mc alias set ansible_minio http://{{ hostvars[inventory_hostname].ansible_host }}:{{ minio_service_port }} {{ minio_admin_user }} {{ minio_admin_pass }}
+  become: yes
+  become_user: "{{ minio_sys_user }}"
+  run_once: yes
+  when: (cluster_mode | bool) and (bucket_list is defined)
+
+- name: Create buckets only first host.
+  shell: |
+    {{ minio_install_dir }}/mc mb ansible_minio/{{ bucket.name }} | true
+    {% if bucket.expire_days is defined %}
+    {{ minio_install_dir }}/mc ilm rule add --expire-days {{ bucket.expire_days }} ansible_minio/{{ bucket.name }}
+    {% endif %}
+  loop: "{{ bucket_list }}"
+  loop_control:
+    loop_var: bucket
+  become: yes
+  become_user: "{{ minio_sys_user }}"
+  run_once: yes
+  when: (cluster_mode | bool) and (bucket_list is defined)
+
+- name: Add minio config.
+  shell: |
+    {{ minio_install_dir }}/mc alias set ansible_minio http://{{ hostvars[inventory_hostname].ansible_host }}:{{ minio_service_port }} {{ minio_admin_user }} {{ minio_admin_pass }}
+  become: yes
+  become_user: "{{ minio_sys_user }}"
+  when: (cluster_mode is false) and (bucket_list is defined)
+
+- name: Create buckets.
+  shell: |
+    {{ minio_install_dir }}/mc mb ansible_minio/{{ bucket.name }} | true
+    {% if bucket.expire_days is defined %}
+    {{ minio_install_dir }}/mc ilm rule add --expire-days {{ bucket.expire_days }} ansible_minio/{{ bucket.name }}
+    {% endif %}
+  loop: "{{ bucket_list }}"
+  loop_control:
+    loop_var: bucket
+  become: yes
+  become_user: "{{ minio_sys_user }}"
+  when: (cluster_mode is false) and (bucket_list is defined)

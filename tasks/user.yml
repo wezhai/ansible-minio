@@ -1,0 +1,37 @@
+---
+- name: Set policies
+  set_fact:
+    policies: "{{ user.policies | default(policies | default({})) }}"
+
+- name: Copy policy files
+  copy:
+    src: "{{ policy.file }}"
+    dest: /tmp/{{ policy.file }}
+  become: yes
+  become_user: "{{ minio_sys_user }}"
+  run_once: yes
+  loop: "{{ policies }}"
+  loop_control:
+    loop_var: policy
+
+- name: Create policies.
+  shell: |
+    {{ minio_install_dir }}/mc admin policy create ansible_minio {{ policy.name }} /tmp/{{ policy.file }}
+  become: yes
+  become_user: "{{ minio_sys_user }}"
+  run_once: yes
+  loop: "{{ policies }}"
+  loop_control:
+    loop_var: policy
+
+- name: Create user '{{ user.username }}' and add some policies.
+  shell: |
+    {{ minio_install_dir }}/mc admin user add ansible_minio {{ user.username }} {{ user.password }}
+    {% for policy in policies %}
+    {{ minio_install_dir }}/mc admin policy attach ansible_minio {{ policy.name }} --user {{ user.username }}
+    {% endfor %}
+  become: yes
+  become_user: "{{ minio_sys_user }}"
+  run_once: yes
+  register: command_result
+  failed_when: "'The specified policy change is already in effect' in command_result"

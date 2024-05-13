@@ -1,0 +1,15 @@
+---
+# handlers file for ansible-minio
+- name: Restart minio service
+  systemd:
+    name: minio
+    daemon_reload: true
+    state: restarted
+  notify: Waiting for minio console port {{ minio_console_port }}
+
+# 等待服务端口启动端口在主机上开放，10秒后检查
+- name: Waiting for minio console port {{ minio_console_port }}
+  wait_for:
+    port: "{{ minio_console_port }}"
+    timeout: 60
+    delay: 5

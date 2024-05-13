@@ -1,0 +1,12 @@
+[Unit]
+Description=Miniomc
+Documentation=https://docs.minio.io/
+
+[Service]
+User={{ minio_sys_user }}
+Group={{ minio_sys_group }}
+ExecStart={{ minio_install_dir }}/mc mirror --limit-upload {{ sync.upload_limit }} --remove --overwrite --watch minio{{ sync.from.area_label }}/{{ bucket_item.local }} minio{{ sync.to.area_label }}/{{ bucket_item.remote }}
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

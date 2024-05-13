@@ -1,0 +1,8 @@
+MINIO_ROOT_USER={{ minio_admin_user }}
+MINIO_ROOT_PASSWORD={{ minio_admin_pass }}
+MINIO_PROMETHEUS_AUTH_TYPE=public
+{% if cluster_mode %}
+MINIO_OPTS="--config-dir {{ minio_config_dir }} --address ':{{ minio_service_port }}' --console-address ':{{ minio_console_port }}'{% for host in play_hosts %} http://{{ hostvars[host].ansible_host }}:{{ minio_service_port}}{{ minio_data_dir }}/{% endfor %}"
+{% else %}
+MINIO_OPTS="--config-dir {{ minio_config_dir }} --address ':{{ minio_service_port }}' --console-address ':{{ minio_console_port }}' {{ minio_data_dir }}/"
+{% endif %}
