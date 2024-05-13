@@ -109,7 +109,7 @@ ansible-playbook -i minio_hosts minio.yml --tags create_sync_services
 ansible-playbook -i sit/minio_hosts minio.yml --tags install,create_users
 ```
 
-### 45. 安装、创建Bucket、创建Bucket同步服务、创建用户
+### 5. 安装、创建Bucket、创建Bucket同步服务、创建用户
 推荐将安装Minio、创建Bucket和创建Bucket同步服务分开执行，如果确认自己的设置没有问题，也可以一条命令完成。
 ```
 ansible-playbook -i minio_hosts minio.yml --tags install,create_buckets,create_sync_services,create_users
